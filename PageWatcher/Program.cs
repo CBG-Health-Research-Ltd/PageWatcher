@@ -42,15 +42,19 @@ namespace PageWatcher
             bool showcardExists = CheckShowcardExists(fileName);
             Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
 
+            
+
             //Log the txt file from QuestionLogTemp into QuestionLog which is where laptopshowcards reads from.
             //Because file changed events turned off as soon as SC observed, any proceeding questions within 500ms boundary won't be passed to questionlog.
-            var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+            var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);           
             myFile.Close();
 
             if (showcardExists == true)
             {
+                Thread.Sleep(100);
+                myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+                myFile.Close();
 
-                
                 //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
                 fileWatcher.Created -= FileWatcher_Changed;
                 fileWatcher.Changed -= FileWatcher_Changed;
