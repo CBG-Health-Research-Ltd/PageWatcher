@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Timers;
 
 namespace PageWatcher
 {
@@ -11,12 +12,13 @@ namespace PageWatcher
         static List<string[]> hls2020ShowcardList;
         static List<string[]> adultY10ShowcardList;
         static List<string[]> childY10ShowcardList;
+        static System.Timers.Timer questionTimer;
+        static FileSystemWatcher fileWatcher = new FileSystemWatcher();
 
 
         static void Main(string[] args)
         {
-            receiveShowcardLists();
-            FileSystemWatcher fileWatcher = new FileSystemWatcher();
+            receiveShowcardLists();          
             fileWatcher.Path = @"C:\nzhs\questioninformation\QuestionLogTemp\";
             fileWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
                         | NotifyFilters.FileName | NotifyFilters.DirectoryName;
@@ -27,7 +29,7 @@ namespace PageWatcher
 
             while (true)
             {
-                Thread.Sleep(10000);
+                Thread.Sleep(10000);//0 cpu usage 
             }
             
         }
@@ -39,6 +41,45 @@ namespace PageWatcher
             string timeStamp = DateTime.Now.ToString();
             bool showcardExists = CheckShowcardExists(fileName);
             Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
+
+            //Log the txt file from QuestionLogTemp into QuestionLog which is where laptopshowcards reads from.
+            //Because file changed events turned off as soon as SC observed, any proceeding questions within 500ms boundary won't be passed to questionlog.
+            var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+            myFile.Close();
+
+            if (showcardExists == true)
+            {
+
+                
+                //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
+                fileWatcher.Created -= FileWatcher_Changed;
+                fileWatcher.Changed -= FileWatcher_Changed;
+
+                //start timer for 500 ms declared in StartTimer function
+                StartTimer();
+
+            }
+
+            
+        }
+
+        private static void StartTimer()
+        {
+            // 500ms interval
+            questionTimer = new System.Timers.Timer(500);
+
+            // Hook up the Elapsed event for the timer. 
+            questionTimer.Elapsed += OnTimedEvent;
+
+            questionTimer.AutoReset = false;
+            questionTimer.Enabled = true;
+        }
+
+        private static void OnTimedEvent(Object source, ElapsedEventArgs e)
+        {
+            fileWatcher.Created += FileWatcher_Changed;
+            fileWatcher.Changed += FileWatcher_Changed;
+            questionTimer.Enabled = false;
         }
 
         #region Receiving Showcard lists from external instructions files
