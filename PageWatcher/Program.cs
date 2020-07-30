@@ -37,7 +37,8 @@ namespace PageWatcher
             
             string fileName = e.Name;
             string timeStamp = DateTime.Now.ToString();
-            Console.WriteLine("file modified/created " + fileName + " " + timeStamp);
+            bool showcardExists = CheckShowcardExists(fileName);
+            Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
         }
 
         #region Receiving Showcard lists from external instructions files
@@ -96,5 +97,66 @@ namespace PageWatcher
         }
 
         #endregion
+
+        #region Getting Corresponding Showcard
+
+        static bool CheckShowcardExists(string inputTxt)
+        {
+            bool showcardExists = false;//false by default for non-existent showcards
+
+            //Obtain the question number and then find the corresponding showcard from look up.
+            if (string.Equals(inputTxt.Substring(0, 8), "question", StringComparison.CurrentCultureIgnoreCase)) //question<shortcut/ID> <survey_name> format expected
+            {
+                //String processing to split shortcut/ID from survey name
+                char Qsplitter = ' ';
+                string[] subStrings = inputTxt.Split(Qsplitter);
+                string questionNum = subStrings[0].Substring(8);
+                string surveyInfo = subStrings[1];
+                int i = 0;
+                
+                string surveyType = surveyInfo.ToLower();
+                List<string[]> showcardList = getShowcardList(surveyType);
+                while (i < showcardList.Count)
+                {
+                    if ((showcardList[i])[0] == questionNum)//Page num/shortcut is first element i.e. 0 index of showcard list entries.
+                    {
+
+                        showcardExists = true;//the question shortcut/ID has been found in the showcard look-up/reference sheet.
+                        break;
+                    }
+                    i++;
+                }
+
+            }
+
+            return showcardExists;
+
+        }
+
+
+        //Two functions below must be changed to accomodate new surveys, also the global variable list instantiation
+        //must be updated so that showcard reference lists are generated upon application launch.
+        static List<string[]> getShowcardList(string survey)
+        {
+            survey = survey.ToLower();
+            List<string[]> showcardList = new List<string[]>();
+            switch (survey)
+            {
+                case ("hls20"): //THESE NEED TO BE UPDATED IN THE SAME FORMAT FOR HLS AND NZCVS!!!!
+                    showcardList = hls2020ShowcardList;
+                    break;
+                case ("nha10"):
+                    showcardList = adultY10ShowcardList;
+                    break;
+                case ("nhc10"):
+                    showcardList = childY10ShowcardList;
+                    break;
+
+            }
+            return showcardList;
+        }
+
+        #endregion
+
     }
 }
