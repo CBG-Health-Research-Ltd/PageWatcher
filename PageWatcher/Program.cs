@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Timers;
@@ -18,6 +19,7 @@ namespace PageWatcher
 
         static void Main(string[] args)
         {
+            closeFirstInstance();
             receiveShowcardLists();          
             fileWatcher.Path = @"C:\nzhs\questioninformation\QuestionLogTemp\";
             fileWatcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
@@ -34,13 +36,22 @@ namespace PageWatcher
             
         }
 
+        private static void closeFirstInstance()
+        {
+            Process[] pname = Process.GetProcessesByName(AppDomain.CurrentDomain.FriendlyName.Remove(AppDomain.CurrentDomain.FriendlyName.Length - 4));
+            if (pname.Length > 1)
+            {
+                pname[1].Kill();
+            }
+        }
+
         private static void FileWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             
             string fileName = e.Name;
             string timeStamp = DateTime.Now.ToString();
             bool showcardExists = CheckShowcardExists(fileName);
-            Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
+            //Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
 
             
 
