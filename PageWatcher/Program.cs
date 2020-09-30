@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Timers;
 
@@ -38,32 +39,28 @@ namespace PageWatcher
 
         private static void closeFirstInstance()
         {
-            Process[] pname = Process.GetProcessesByName(AppDomain.CurrentDomain.FriendlyName.Remove(AppDomain.CurrentDomain.FriendlyName.Length - 4));
-            if (pname.Length > 1)
-            {
-                pname[1].Kill();
-            }
+            if (System.Diagnostics.Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location)).Count() > 1) System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
 
+        //This event firing looks up to see whether questions are showcard, recorded or both. It then applies delays thread.sleeps and double-checks. If a showcard and/or recording
+        //question is observed, it stops all moniotring of the QuestionLogTemp folder which is where pageturner.exe sends info to from askia. This prevents askia
+        //sending wrong information therefore causing wrong showcard display or recording. It runs a double-check to ensure the expected item is being logged in
+        //QuestionLog which is where laptopShowcards reads from.
         private static void FileWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             
             string fileName = e.Name;
             string timeStamp = DateTime.Now.ToString();
-            bool showcardExists = CheckShowcardExists(fileName);
-            //Console.WriteLine("file modified/created " + fileName + " " + timeStamp + " Showcard exists: " + showcardExists.ToString());
-
-            
+            string questionType = CheckQuestionType(fileName);
 
             //Log the txt file from QuestionLogTemp into QuestionLog which is where laptopshowcards reads from.
-            //Because file changed events turned off as soon as SC observed, any proceeding questions within 500ms boundary won't be passed to questionlog.
-            var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);           
-            myFile.Close();
+            //Because file changed events turned off as soon as SC or audio Recording observed, any proceeding questions within 500ms boundary won't be passed to questionlog.
 
-            if (showcardExists == true)
+
+            if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
             {
                 Thread.Sleep(100);
-                myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+                var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
                 myFile.Close();
 
                 //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
@@ -72,10 +69,65 @@ namespace PageWatcher
 
                 //start timer for 500 ms declared in StartTimer function
                 StartTimer();
+            }
+            else //cases for no SC AND/OR record, therefore a logo page question.
+            {
+                //check again to see if a showcard or record question has been logged after a certain delay by checking latest file in QuestionLogTemp
+                //if not then finally log this question
+                Thread.Sleep(100);
+                string newerFileName = getLatest(@"C:\nzhs\questioninformation\QuestionLogTemp\") + ".txt";//returns the latest observed file after the delay
+                questionType = CheckQuestionType(newerFileName);
+                if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
+                {
+                    Thread.Sleep(100);
+                    var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName );
+                    myFile.Close();
 
+                    //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
+                    fileWatcher.Created -= FileWatcher_Changed;
+                    fileWatcher.Changed -= FileWatcher_Changed;
+
+                    //start timer for 500 ms declared in StartTimer function
+                    StartTimer();
+                }
+                else
+                {
+                    var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName);
+                    myFile.Close();
+                }
             }
 
             
+        }
+
+        private static string getLatest(string directory)//Gets the name of the latest file created/updated in QuestionLog directory.
+        {
+            string Username = Environment.UserName;
+            DirectoryInfo questionDirectory = new DirectoryInfo(directory);
+            string latestFile = Path.GetFileNameWithoutExtension(FindLatestFile(questionDirectory).Name);
+            return latestFile;
+
+        }
+
+        private static FileInfo FindLatestFile(DirectoryInfo directoryInfo)//Gets file info of latest file updated/created in directory.
+        {
+            if (directoryInfo == null || !directoryInfo.Exists)
+                return null;
+
+            FileInfo[] files = directoryInfo.GetFiles();
+            DateTime lastWrite = DateTime.MinValue;
+            TimeSpan lastWriteMiliseconds = lastWrite.TimeOfDay;
+            FileInfo lastWrittenFile = null;
+
+            foreach (FileInfo file in files)
+            {
+                if (file.LastWriteTime.TimeOfDay > lastWriteMiliseconds)
+                {
+                    lastWriteMiliseconds = file.LastWriteTime.TimeOfDay;
+                    lastWrittenFile = file;
+                }
+            }
+            return lastWrittenFile;
         }
 
         private static void StartTimer()
@@ -156,9 +208,9 @@ namespace PageWatcher
 
         #region Getting Corresponding Showcard
 
-        static bool CheckShowcardExists(string inputTxt)
+        static string CheckQuestionType(string inputTxt)
         {
-            bool showcardExists = false;//false by default for non-existent showcards
+            string questionType = "noShowcardOrRecord";//This is the default for questions not containing showcard or record keyword
 
             //Obtain the question number and then find the corresponding showcard from look up.
             if (string.Equals(inputTxt.Substring(0, 8), "question", StringComparison.CurrentCultureIgnoreCase)) //question<shortcut/ID> <survey_name> format expected
@@ -174,10 +226,22 @@ namespace PageWatcher
                 List<string[]> showcardList = getShowcardList(surveyType);
                 while (i < showcardList.Count)
                 {
-                    if ((showcardList[i])[0] == questionNum)//Page num/shortcut is first element i.e. 0 index of showcard list entries.
+                    if ((showcardList[i][0] == questionNum) && (showcardList[i][1] != "1") && (showcardList[i][2] == "record"))//Page num/shortcut is first element i.e. 0 index of showcard list entries.
                     {
 
-                        showcardExists = true;//the question shortcut/ID has been found in the showcard look-up/reference sheet.
+                        questionType = "showcardANDrecord";//the question shortcut/ID has been found in the showcard look-up/reference sheet.
+                        break;
+                    }
+                    else if ((showcardList[i][0] == questionNum) && (showcardList[i][1] != "1") && (showcardList[i][2] != "record"))//Page num/shortcut is first element i.e. 0 index of showcard list entries.
+                    {
+
+                        questionType = "showcardOnly";//the question shortcut/ID has been found in the showcard look-up/reference sheet.
+                        break;
+                    }
+                    else if ((showcardList[i][0] == questionNum) && (showcardList[i][1] == "1") && (showcardList[i][2] == "record"))//Page num/shortcut is first element i.e. 0 index of showcard list entries.
+                    {
+
+                        questionType = "recordOnly";//the question shortcut/ID has been found in the showcard look-up/reference sheet.
                         break;
                     }
                     i++;
@@ -185,7 +249,7 @@ namespace PageWatcher
 
             }
 
-            return showcardExists;
+            return questionType;
 
         }
 
