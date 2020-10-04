@@ -79,6 +79,7 @@ namespace PageWatcher
                 questionType = CheckQuestionType(newerFileName);
                 if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
                 {
+                    //exact same as initial if statement. Could be wrapped in a function.. This is the double check
                     Thread.Sleep(100);
                     var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName );
                     myFile.Close();
@@ -92,6 +93,7 @@ namespace PageWatcher
                 }
                 else
                 {
+                    //Finally, if after two checks the question is not a record or showcard question, log it. It will be a logo page no record question
                     var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName);
                     myFile.Close();
                 }
@@ -100,7 +102,7 @@ namespace PageWatcher
             
         }
 
-        private static string getLatest(string directory)//Gets the name of the latest file created/updated in QuestionLog directory.
+        private static string getLatest(string directory)//Gets the name of the latest file created/updated in QuestionLogTemp directory.
         {
             string Username = Environment.UserName;
             DirectoryInfo questionDirectory = new DirectoryInfo(directory);
@@ -142,6 +144,7 @@ namespace PageWatcher
             questionTimer.Enabled = true;
         }
 
+        //Reset the events so pagewatcher continues to listen for new questions.
         private static void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
             fileWatcher.Created += FileWatcher_Changed;
@@ -150,6 +153,8 @@ namespace PageWatcher
         }
 
         #region Receiving Showcard lists from external instructions files
+
+        //Sets the lists from instruction files on initialisation of app.
         static void receiveShowcardLists()
         {
             //This method could be cleaned up in the future
@@ -158,6 +163,8 @@ namespace PageWatcher
             childY10ShowcardList = GetShowcardPageList("CHILDY10");
         }
 
+
+        //Processes the instruction files recieved on initialisation and saves them to a manageable list within application.
         static string[] subStrings;
         static List<string[]> GetShowcardPageList(string survey)
         {
@@ -208,6 +215,8 @@ namespace PageWatcher
 
         #region Getting Corresponding Showcard
 
+        //Checks showcard/record status of question. This is how the file added/updated event knows how to log in QuestionLog and then enforce a delay
+        //to prevent unexpected question shortcuts being fired by askia.
         static string CheckQuestionType(string inputTxt)
         {
             string questionType = "noShowcardOrRecord";//This is the default for questions not containing showcard or record keyword
