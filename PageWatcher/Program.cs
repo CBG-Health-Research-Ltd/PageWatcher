@@ -72,10 +72,12 @@ namespace PageWatcher
             }
             else //cases for no SC AND/OR record, therefore a logo page question.
             {
+                var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+                myFile.Close();
                 //check again to see if a showcard or record question has been logged after a certain delay by checking latest file in QuestionLogTemp
                 //if not then finally log this question
                 Thread.Sleep(100);
-                string newerFileName = getLatest(@"C:\nzhs\questioninformation\QuestionLogTemp\") + ".txt";//returns the latest observed file after the delay
+                /*string newerFileName = getLatest(@"C:\nzhs\questioninformation\QuestionLogTemp\") + ".txt";//returns the latest observed file after the delay
                 questionType = CheckQuestionType(newerFileName);
                 if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
                 {
@@ -96,7 +98,7 @@ namespace PageWatcher
                     //Finally, if after two checks the question is not a record or showcard question, log it. It will be a logo page no record question
                     var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName);
                     myFile.Close();
-                }
+                }*/
             }
 
             
