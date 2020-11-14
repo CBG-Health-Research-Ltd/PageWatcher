@@ -14,6 +14,7 @@ namespace PageWatcher
         static List<string[]> hls2020ShowcardList;
         static List<string[]> adultY10ShowcardList;
         static List<string[]> childY10ShowcardList;
+        static List<string[]> nzcvsy4ShowcardList;
         static System.Timers.Timer questionTimer;
         static FileSystemWatcher fileWatcher = new FileSystemWatcher();
 
@@ -163,6 +164,8 @@ namespace PageWatcher
             hls2020ShowcardList = GetShowcardPageList("HLS2020");
             adultY10ShowcardList = GetShowcardPageList("ADULTY10");
             childY10ShowcardList = GetShowcardPageList("CHILDY10");
+            nzcvsy4ShowcardList = GetShowcardPageList("NZCVSY4");
+
         }
 
 
@@ -184,6 +187,9 @@ namespace PageWatcher
                         break;
                     case ("ADULTY10"):
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY10AdultInstructions.txt");
+                        break;
+                    case ("NZCVSY4"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY4Instructions.txt");
                         break;
                 }
             }
@@ -281,6 +287,9 @@ namespace PageWatcher
                     break;
                 case ("nhc10"):
                     showcardList = childY10ShowcardList;
+                    break;
+                case ("y4cvs"):
+                    showcardList = nzcvsy4ShowcardList;
                     break;
 
             }
