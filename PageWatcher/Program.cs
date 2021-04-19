@@ -302,6 +302,12 @@ namespace PageWatcher
                 case ("y4cvs"):
                     showcardList = nzcvsy4ShowcardList;
                     break;
+                case ("nha11"):
+                    showcardList = adultY11ShowcardList;
+                    break;
+                case ("nhc11"):
+                    showcardList = childY11ShowcardList;
+                    break;
 
             }
             return showcardList;
