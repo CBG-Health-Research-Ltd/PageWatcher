@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Timers;
 
@@ -15,6 +16,8 @@ namespace PageWatcher
         static List<string[]> adultY10ShowcardList;
         static List<string[]> childY10ShowcardList;
         static List<string[]> nzcvsy4ShowcardList;
+        static List<string[]> adultY11ShowcardList;
+        static List<string[]> childY11ShowcardList;
         static System.Timers.Timer questionTimer;
         static FileSystemWatcher fileWatcher = new FileSystemWatcher();
 
@@ -165,6 +168,8 @@ namespace PageWatcher
             adultY10ShowcardList = GetShowcardPageList("ADULTY10");
             childY10ShowcardList = GetShowcardPageList("CHILDY10");
             nzcvsy4ShowcardList = GetShowcardPageList("NZCVSY4");
+            adultY11ShowcardList = GetShowcardPageList("ADULTY11");
+            childY11ShowcardList = GetShowcardPageList("CHILDY11");
 
         }
 
@@ -189,7 +194,13 @@ namespace PageWatcher
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY10AdultInstructions.txt");
                         break;
                     case ("NZCVSY4"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY4Instructions.txt");
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY4Instructions.txt", Encoding.Default);
+                        break;
+                    case ("CHILDY11"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY11ChildInstructions.txt");
+                        break;
+                    case ("ADULTY11"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY11AdultInstructions.txt");
                         break;
                 }
             }
