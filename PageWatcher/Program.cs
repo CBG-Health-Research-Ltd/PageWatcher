@@ -19,6 +19,9 @@ namespace PageWatcher
         static List<string[]> adultY11ShowcardList;
         static List<string[]> childY11ShowcardList;
         static List<string[]> nzcvsy5ShowcardList;
+        static List<string[]> adultY12ShowcardList;
+        static List<string[]> childY12ShowcardList;
+        static List<string[]> nzissy1ShowcardList;
         static System.Timers.Timer questionTimer;
         static FileSystemWatcher fileWatcher = new FileSystemWatcher();
 
@@ -172,6 +175,9 @@ namespace PageWatcher
             adultY11ShowcardList = GetShowcardPageList("ADULTY11");
             childY11ShowcardList = GetShowcardPageList("CHILDY11");
             nzcvsy5ShowcardList = GetShowcardPageList("NZCVSY5");
+            adultY12ShowcardList = GetShowcardPageList("ADULTY12");
+            childY12ShowcardList = GetShowcardPageList("CHILDY12");
+            nzissy1ShowcardList = GetShowcardPageList("NZISSY1");
 
         }
 
@@ -206,6 +212,15 @@ namespace PageWatcher
                         break;
                     case ("NZCVSY5"):
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY5Instructions.txt", Encoding.Default);
+                        break;
+                    case ("CHILDY12"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY12ChildInstructions.txt");
+                        break;
+                    case ("ADULTY12"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY12AdultInstructions.txt");
+                        break;
+                    case ("NZISSY1"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZISSY1Instructions.txt", Encoding.Default);
                         break;
                 }
             }
@@ -315,6 +330,15 @@ namespace PageWatcher
                     break;
                 case ("y5cvs"):
                     showcardList = nzcvsy5ShowcardList;
+                    break;
+                case ("nha12"):
+                    showcardList = adultY12ShowcardList;
+                    break;
+                case ("nhc12"):
+                    showcardList = childY12ShowcardList;
+                    break;
+                case ("y1nzi"):
+                    showcardList = nzissy1ShowcardList;
                     break;
 
             }
