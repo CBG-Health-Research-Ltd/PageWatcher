@@ -21,6 +21,8 @@ namespace PageWatcher
         static List<string[]> nzcvsy5ShowcardList;
         static List<string[]> adultY12ShowcardList;
         static List<string[]> childY12ShowcardList;
+        static List<string[]> adultY13ShowcardList;
+        static List<string[]> childY13ShowcardList;
         static List<string[]> nzissy1ShowcardList;
         static List<string[]> nzcvsy6ShowcardList;
         static System.Timers.Timer questionTimer;
@@ -180,6 +182,8 @@ namespace PageWatcher
             childY12ShowcardList = GetShowcardPageList("CHILDY12");
             nzissy1ShowcardList = GetShowcardPageList("NZISSY1");
             nzcvsy6ShowcardList = GetShowcardPageList("NZCVSY6");
+            adultY13ShowcardList = GetShowcardPageList("ADULTY13");
+            childY13ShowcardList = GetShowcardPageList("CHILDY13");
 
         }
 
@@ -226,6 +230,12 @@ namespace PageWatcher
                         break;
                     case ("NZCVSY6"):
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY6Instructions.txt", Encoding.Default);
+                        break;
+                    case ("CHILDY13"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY13ChildInstructions.txt");
+                        break;
+                    case ("ADULTY13"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY13AdultInstructions.txt");
                         break;
                 }
             }
@@ -347,6 +357,12 @@ namespace PageWatcher
                     break;
                 case ("y6cvs"):
                     showcardList = nzcvsy6ShowcardList;
+                    break;
+                case ("nha13"):
+                    showcardList = adultY13ShowcardList;
+                    break;
+                case ("nhc13"):
+                    showcardList = childY13ShowcardList;
                     break;
 
             }
