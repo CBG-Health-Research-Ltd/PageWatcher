@@ -12,21 +12,19 @@ namespace PageWatcher
     class Program
     {
         //The 'globals' below need to be updated for new showcard instructions. So does receiveShowcardLists() and GetShowcardPageList()
-        static List<string[]> hls2020ShowcardList;
-        static List<string[]> adultY10ShowcardList;
-        static List<string[]> childY10ShowcardList;
-        static List<string[]> nzcvsy4ShowcardList;
-        static List<string[]> adultY11ShowcardList;
-        static List<string[]> childY11ShowcardList;
-        static List<string[]> nzcvsy5ShowcardList;
-        static List<string[]> adultY12ShowcardList;
-        static List<string[]> childY12ShowcardList;
         static List<string[]> adultY13ShowcardList;
         static List<string[]> childY13ShowcardList;
-        static List<string[]> nzissy1ShowcardList;
-        static List<string[]> nzcvsy6ShowcardList;
+        static List<string[]> nzcvsy7ShowcardList;
+        static List<string[]> ppmy7ShowcardList;
+        static List<string[]> adultY14ShowcardList;
+        static List<string[]> childY14ShowcardList;
         static System.Timers.Timer questionTimer;
+        static string currentQuestion = null;
         static FileSystemWatcher fileWatcher = new FileSystemWatcher();
+        static List<string> askedQuestions = new List<string>()
+                                                {
+                                                    "EMPTYFORINIT"
+                                                };
 
 
         static void Main(string[] args)
@@ -57,62 +55,83 @@ namespace PageWatcher
         //question is observed, it stops all moniotring of the QuestionLogTemp folder which is where pageturner.exe sends info to from askia. This prevents askia
         //sending wrong information therefore causing wrong showcard display or recording. It runs a double-check to ensure the expected item is being logged in
         //QuestionLog which is where laptopShowcards reads from.
+
+        //
         private static void FileWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             
             string fileName = e.Name;
             string timeStamp = DateTime.Now.ToString();
             string questionType = CheckQuestionType(fileName);
+            askedQuestions.Add(fileName);
+
+            List<string> askedQuestionView = askedQuestions; //so can view while debugging (something was going on with VS)
 
             //Log the txt file from QuestionLogTemp into QuestionLog which is where laptopshowcards reads from.
             //Because file changed events turned off as soon as SC or audio Recording observed, any proceeding questions within 500ms boundary won't be passed to questionlog.
 
+            string previousQuestion = currentQuestion;
+            currentQuestion = fileName;
 
-            if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
+            if (!(currentQuestion == "questionPE03 Y7PPM .txt" && previousQuestion == "questionPE03 Y7PPM .txt"))//Handle weird cases from PPM
             {
-                Thread.Sleep(100);
-                var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
-                myFile.Close();
 
-                //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
-                fileWatcher.Created -= FileWatcher_Changed;
-                fileWatcher.Changed -= FileWatcher_Changed;
-
-                //start timer for 500 ms declared in StartTimer function
-                StartTimer();
-            }
-            else //cases for no SC AND/OR record, therefore a logo page question.
-            {
-                var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
-                myFile.Close();
-                //check again to see if a showcard or record question has been logged after a certain delay by checking latest file in QuestionLogTemp
-                //if not then finally log this question
-                Thread.Sleep(100);
-                /*string newerFileName = getLatest(@"C:\nzhs\questioninformation\QuestionLogTemp\") + ".txt";//returns the latest observed file after the delay
-                questionType = CheckQuestionType(newerFileName);
                 if (questionType == "showcardANDrecord" || questionType == "showcardOnly" || questionType == "recordOnly")
                 {
-                    //exact same as initial if statement. Could be wrapped in a function.. This is the double check
+
+
                     Thread.Sleep(100);
-                    var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName );
+
+
+                    var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
                     myFile.Close();
 
-                    //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
-                    fileWatcher.Created -= FileWatcher_Changed;
-                    fileWatcher.Changed -= FileWatcher_Changed;
 
-                    //start timer for 500 ms declared in StartTimer function
-                    StartTimer();
+                    if (!(currentQuestion.Contains("PE01_Response") || currentQuestion.Contains("PE02_Response") || currentQuestion.Contains("PE03_Response")
+                        || currentQuestion.Contains("PE03 ") || currentQuestion.Contains("PE04_Response")))//handling weird PPM behavior
+                    {
+
+                        //Turn off QuestionLogTemp reading events so any questions after the showcard within StartTimer() bounds won't be logged to QuestionLog
+                        fileWatcher.Created -= FileWatcher_Changed;
+                        fileWatcher.Changed -= FileWatcher_Changed;
+
+
+                        //start timer for 500 ms declared in StartTimer function
+                        StartTimer();
+                    }
+
+
+
                 }
-                else
+                else //cases for no SC AND/OR record, therefore a logo page question. Clean unwante stuff (omit) here.
                 {
-                    //Finally, if after two checks the question is not a record or showcard question, log it. It will be a logo page no record question
-                    var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + newerFileName);
-                    myFile.Close();
-                }*/
+                    if ((fileName.Contains("Y7PPM") && //Handles weird PPM behavior sending loop on answering Q sub Qs each time
+                        (fileName.Contains("PE01 ") || fileName.Contains("PE02 ") || fileName.Contains("PE04 ") ||
+                        fileName.Contains("PE05 ") || fileName.Contains("PE06 ") || fileName.Contains("PE07 ") || fileName.Contains("PE08 ") ||
+                        fileName.Contains("PE09 ") || fileName.Contains("PE10 ") || fileName.Contains("PE11 ") || fileName.Contains("PE12 ") ||
+                        fileName.Contains("PE13 ") || fileName.Contains("PE14 ") || fileName.Contains("PE15 ") || fileName.Contains("PE16 ") ||
+                        fileName.Contains("PE17 ") || fileName.Contains("PE18 ") || fileName.Contains("PE19 ") || fileName.Contains("PE20 ")))
+                        
+                        ||
+
+
+                        (fileName.Contains("MD 1.02 section")))
+
+
+                    {
+                        //Do nothing, i.e. do not log to QuestionLog
+                    }
+                    else
+                    {
+                        var myFile = File.Create(@"C:\nzhs\questioninformation\QuestionLog\" + fileName);
+                        myFile.Close();
+                    }
+
+                }
+
             }
 
-            
+
         }
 
         private static string getLatest(string directory)//Gets the name of the latest file created/updated in QuestionLogTemp directory.
@@ -148,7 +167,7 @@ namespace PageWatcher
         private static void StartTimer()
         {
             // 500ms interval
-            questionTimer = new System.Timers.Timer(500);
+            questionTimer = new System.Timers.Timer(10);
 
             // Hook up the Elapsed event for the timer. 
             questionTimer.Elapsed += OnTimedEvent;
@@ -171,20 +190,12 @@ namespace PageWatcher
         static void receiveShowcardLists()
         {
             //This method could be cleaned up in the future
-            hls2020ShowcardList = GetShowcardPageList("HLS2020");
-            adultY10ShowcardList = GetShowcardPageList("ADULTY10");
-            childY10ShowcardList = GetShowcardPageList("CHILDY10");
-            nzcvsy4ShowcardList = GetShowcardPageList("NZCVSY4");
-            adultY11ShowcardList = GetShowcardPageList("ADULTY11");
-            childY11ShowcardList = GetShowcardPageList("CHILDY11");
-            nzcvsy5ShowcardList = GetShowcardPageList("NZCVSY5");
-            adultY12ShowcardList = GetShowcardPageList("ADULTY12");
-            childY12ShowcardList = GetShowcardPageList("CHILDY12");
-            nzissy1ShowcardList = GetShowcardPageList("NZISSY1");
-            nzcvsy6ShowcardList = GetShowcardPageList("NZCVSY6");
             adultY13ShowcardList = GetShowcardPageList("ADULTY13");
             childY13ShowcardList = GetShowcardPageList("CHILDY13");
-
+            nzcvsy7ShowcardList = GetShowcardPageList("NZCVSY7");
+            ppmy7ShowcardList = GetShowcardPageList("PPMY7");
+            adultY14ShowcardList = GetShowcardPageList("ADULTY14");
+            childY14ShowcardList = GetShowcardPageList("CHILDY14");
         }
 
 
@@ -198,44 +209,23 @@ namespace PageWatcher
             {
                 switch (survey)
                 {                 
-                    case ("HLS20"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\HLS2020Instructions.txt");
-                        break;
-                    case ("CHILDY10"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY10ChildInstructions.txt");
-                        break;
-                    case ("ADULTY10"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY10AdultInstructions.txt");
-                        break;
-                    case ("NZCVSY4"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY4Instructions.txt", Encoding.Default);
-                        break;
-                    case ("CHILDY11"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY11ChildInstructions.txt");
-                        break;
-                    case ("ADULTY11"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY11AdultInstructions.txt");
-                        break;
-                    case ("NZCVSY5"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY5Instructions.txt", Encoding.Default);
-                        break;
-                    case ("CHILDY12"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY12ChildInstructions.txt");
-                        break;
-                    case ("ADULTY12"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY12AdultInstructions.txt");
-                        break;
-                    case ("NZISSY1"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZISSY1Instructions.txt", Encoding.Default);
-                        break;
-                    case ("NZCVSY6"):
-                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY6Instructions.txt", Encoding.Default);
-                        break;
                     case ("CHILDY13"):
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY13ChildInstructions.txt");
                         break;
                     case ("ADULTY13"):
                         ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY13AdultInstructions.txt");
+                        break;
+                    case ("NZCVSY7"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZCVSY7Instructions.txt", Encoding.Default);
+                        break;
+                    case ("PPMY7"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\PPMY7Instructions.txt", Encoding.Default);
+                        break;
+                    case ("CHILDY14"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY14ChildInstructions.txt");
+                        break;
+                    case ("ADULTY14"):
+                        ShowcardPageArray = File.ReadAllLines(@"C:\CBGShared\surveyinstructions\NZHSY14AdultInstructions.txt");
                         break;
                 }
             }
@@ -325,44 +315,23 @@ namespace PageWatcher
             List<string[]> showcardList = new List<string[]>();
             switch (survey)
             {
-                case ("hls20"): //THESE NEED TO BE UPDATED IN THE SAME FORMAT FOR HLS AND NZCVS!!!!
-                    showcardList = hls2020ShowcardList;
-                    break;
-                case ("nha10"):
-                    showcardList = adultY10ShowcardList;
-                    break;
-                case ("nhc10"):
-                    showcardList = childY10ShowcardList;
-                    break;
-                case ("y4cvs"):
-                    showcardList = nzcvsy4ShowcardList;
-                    break;
-                case ("nha11"):
-                    showcardList = adultY11ShowcardList;
-                    break;
-                case ("nhc11"):
-                    showcardList = childY11ShowcardList;
-                    break;
-                case ("y5cvs"):
-                    showcardList = nzcvsy5ShowcardList;
-                    break;
-                case ("nha12"):
-                    showcardList = adultY12ShowcardList;
-                    break;
-                case ("nhc12"):
-                    showcardList = childY12ShowcardList;
-                    break;
-                case ("y1nzi"):
-                    showcardList = nzissy1ShowcardList;
-                    break;
-                case ("y6cvs"):
-                    showcardList = nzcvsy6ShowcardList;
-                    break;
                 case ("nha13"):
                     showcardList = adultY13ShowcardList;
                     break;
                 case ("nhc13"):
                     showcardList = childY13ShowcardList;
+                    break;
+                case ("y7cvs"):
+                    showcardList = nzcvsy7ShowcardList;
+                    break;
+                case ("y7ppm"):
+                    showcardList = ppmy7ShowcardList;
+                    break;
+                case ("nha14"):
+                    showcardList = adultY14ShowcardList;
+                    break;
+                case ("nhc14"):
+                    showcardList = childY14ShowcardList;
                     break;
 
             }
